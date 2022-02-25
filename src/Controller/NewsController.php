@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Repository\NewsRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -9,11 +10,10 @@ use Symfony\Component\Routing\Annotation\Route;
 class NewsController extends AbstractController
 {
     #[Route('/news', name: 'news')]
-    public function index(): Response
+    public function index(NewsRepository $newsRepository): Response
     {
-        return $this->json([
-            'message' => 'Welcome to your new controller!',
-            'path' => 'src/Controller/NewsController.php',
-        ]);
+        $allNews = $newsRepository->findAll();
+
+        return $this->json($allNews)->setEncodingOptions(JSON_UNESCAPED_UNICODE);
     }
 }

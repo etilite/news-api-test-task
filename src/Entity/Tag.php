@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\TagRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Symfony\Component\Serializer\Annotation\Ignore;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: TagRepository::class)]
@@ -19,6 +20,7 @@ class Tag
     private $name;
 
     #[ORM\ManyToMany(targetEntity: News::class, inversedBy: 'tags')]
+    #[Ignore]
     private $news;
 
     public function __construct()

@@ -12,7 +12,10 @@ class NewsController extends AbstractController
     #[Route('/news', name: 'news')]
     public function index(NewsRepository $newsRepository): Response
     {
-        $allNews = $newsRepository->findAll();
+        //$allNews = $newsRepository->findAll();
+        //$allNews = $newsRepository->findByYearAndMonth();
+        $tagNames = ["#экономика", "#наука"];
+        $allNews = $newsRepository->findHavingTags($tagNames);
 
         return $this->json($allNews)->setEncodingOptions(JSON_UNESCAPED_UNICODE);
     }

@@ -28,20 +28,20 @@ class NewsRepositoryTest extends KernelTestCase
         $this->assertCount(7, $allNews);
     }
 
-    public function testFindByYearAndMonth()
+    public function testFindByYearMonthAndTags()
     {
         $allNews = $this->entityManager
             ->getRepository(News::class)
-            ->findByYearAndMonth('2020', '01');
+            ->findByYearMonthAndTags(1,'2020', '01');
 
         $this->assertCount(1, $allNews);
     }
 
-    public function testFindByNullYearAndMonth()
+    public function testFindByYearMonthAndTagsWithBlankConditions()
     {
         $allNews = $this->entityManager
             ->getRepository(News::class)
-            ->findByYearAndMonth();
+            ->findByYearMonthAndTags();
 
         $this->assertCount(7, $allNews);
     }
@@ -51,12 +51,15 @@ class NewsRepositoryTest extends KernelTestCase
         $tags = ["#экономика", "#наука"];
         $allNews = $this->entityManager
             ->getRepository(News::class)
-            ->findByYearAndMonth(null, null, $tags);
+            ->findByYearMonthAndTags(1,'', '', $tags);
 
         $this->assertCount(3, $allNews);
-        $this->assertEquals('Новость 3', $allNews[0]->getTitle());
-        $this->assertEquals('Новость 2', $allNews[1]->getTitle());
-        $this->assertEquals('Новость 1', $allNews[2]->getTitle());
+        $iterator = $allNews->getIterator();
+        $this->assertEquals('Новость 3',$iterator->current()->getTitle());
+        $iterator->next();
+        $this->assertEquals('Новость 2', $iterator->current()->getTitle());
+        $iterator->next();
+        $this->assertEquals('Новость 1', $iterator->current()->getTitle());
     }
 
     public function testFindHavingTwoTags()

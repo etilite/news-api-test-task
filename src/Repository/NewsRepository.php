@@ -4,8 +4,8 @@ namespace App\Repository;
 
 use App\Entity\News;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -16,14 +16,18 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class NewsRepository extends ServiceEntityRepository
 {
+    public const ITEMS_PER_PAGE = 5;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, News::class);
     }
 
-    public function findByYearAndMonth(string $year = null, string $month = null, array $tags = null)
+    public function findByYearMonthAndTags(int $page = 1, string $year = '', string $month = '', array $tags = [])
     {
         $qb = $this->createQueryBuilder('n')
+            ->leftJoin('n.tags', 'tag')
+            ->addSelect('tag')
             ->orderBy('n.publishedAt', 'DESC')
         ;
         if ($year && $month) {
@@ -33,25 +37,22 @@ class NewsRepository extends ServiceEntityRepository
                 ->setParameter('month', $month)
             ;
         }
-        if (empty($tags)) {
-            $qb->leftJoin('n.tags', 'tag')
-                ->addSelect('tag');
-        } else {
-            $this->joinTagsToQueryBuilder($qb, $tags);
+        if (!empty($tags)) {
+            $this->filterByTags($qb, $tags);
         }
 
-        return $qb->getQuery()->getResult();
+        return $this->paginate($qb, $page);
     }
 
     public function findHavingTags(array $tags): ?array
     {
         $qb = $this->createQueryBuilder('n');
-        $this->joinTagsToQueryBuilder($qb, $tags);
+        $this->filterByTags($qb, $tags);
 
         return $qb->getQuery()->getResult();
     }
 
-    private function joinTagsToQueryBuilder(QueryBuilder $queryBuilder, array $tagNames): void
+    private function filterByTags(QueryBuilder $queryBuilder, array $tagNames): void
     {
         for ($i = 0; $i < count($tagNames); $i++) {
             $tagAlias = 'tag' . $i;
@@ -60,32 +61,13 @@ class NewsRepository extends ServiceEntityRepository
         }
     }
 
-    // /**
-    //  * @return News[] Returns an array of News objects
-    //  */
-    /*
-    public function findByExampleField($value)
+    private function paginate(QueryBuilder $queryBuilder, int $page): Paginator
     {
-        return $this->createQueryBuilder('n')
-            ->andWhere('n.exampleField = :val')
-            ->setParameter('val', $value)
-            ->orderBy('n.id', 'ASC')
-            ->setMaxResults(10)
-            ->getQuery()
-            ->getResult()
-        ;
-    }
-    */
+        $offset = self::ITEMS_PER_PAGE * ($page - 1);
+        $query = $queryBuilder->getQuery()
+            ->setFirstResult($offset)
+            ->setMaxResults(self::ITEMS_PER_PAGE);
 
-    /*
-    public function findOneBySomeField($value): ?News
-    {
-        return $this->createQueryBuilder('n')
-            ->andWhere('n.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
+        return new Paginator($query);
     }
-    */
 }

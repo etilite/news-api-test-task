@@ -2,6 +2,7 @@
 namespace App\Tests;
 
 use App\Entity\News;
+use App\Model\FilterParamsModel;
 use Doctrine\ORM\EntityManager;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -30,41 +31,59 @@ class NewsRepositoryTest extends KernelTestCase
 
     public function testFindByYearMonthAndTags()
     {
+        $filterParamsModel = new FilterParamsModel();
+        $filterParamsModel->setDateYearMonthFromParts('2021', '5')
+            ->setTags(['экономика'])
+        ;
         $allNews = $this->entityManager
             ->getRepository(News::class)
-            ->findByYearMonthAndTags(1,'2020', '01');
+            ->findByYearMonthAndTags($filterParamsModel);
+
+        $this->assertCount(2, $allNews);
+        $iterator = $allNews->getIterator();
+        $this->assertEquals('Новость 3', $iterator->current()->getTitle());
+    }
+
+    public function testFindByYearMonth()
+    {
+        $filterParamsModel = new FilterParamsModel();
+        $filterParamsModel->setDateYearMonthFromParts('2020', '1');
+        $allNews = $this->entityManager
+            ->getRepository(News::class)
+            ->findByYearMonthAndTags($filterParamsModel);
 
         $this->assertCount(1, $allNews);
     }
 
     public function testFindByYearMonthAndTagsWithBlankConditions()
     {
+        $filterParamsModel = new FilterParamsModel();
         $allNews = $this->entityManager
             ->getRepository(News::class)
-            ->findByYearMonthAndTags();
+            ->findByYearMonthAndTags($filterParamsModel);
 
         $this->assertCount(7, $allNews);
     }
 
     public function testFindByTags()
     {
-        $tags = ["#экономика", "#наука"];
+        $filterParamsModel = new FilterParamsModel();
+        $filterParamsModel->setTags(["экономика", "наука"]);
         $allNews = $this->entityManager
             ->getRepository(News::class)
-            ->findByYearMonthAndTags(1,'', '', $tags);
+            ->findByYearMonthAndTags($filterParamsModel);
 
+        //$allNews = iterator_to_array($allNews->getIterator());
+        $allNews = $allNews->getIterator()->getArrayCopy();
         $this->assertCount(3, $allNews);
-        $iterator = $allNews->getIterator();
-        $this->assertEquals('Новость 3',$iterator->current()->getTitle());
-        $iterator->next();
-        $this->assertEquals('Новость 2', $iterator->current()->getTitle());
-        $iterator->next();
-        $this->assertEquals('Новость 1', $iterator->current()->getTitle());
+        $this->assertEquals('Новость 3', $allNews[0]->getTitle());
+        $this->assertEquals('Новость 2', $allNews[1]->getTitle());
+        $this->assertEquals('Новость 1', $allNews[2]->getTitle());
     }
 
     public function testFindHavingTwoTags()
     {
-        $tagNames = ["#экономика", "#наука"];
+        $tagNames = ["экономика", "наука"];
         $allNews = $this->entityManager
             ->getRepository(News::class)
             ->findHavingTags($tagNames);
@@ -79,7 +98,7 @@ class NewsRepositoryTest extends KernelTestCase
 
     public function testFindHavingThreeTags()
     {
-        $tagNames = ["#экономика", "#наука", "#политика"];
+        $tagNames = ["экономика", "наука", "политика"];
         $allNews = $this->entityManager
             ->getRepository(News::class)
             ->findHavingTags($tagNames);

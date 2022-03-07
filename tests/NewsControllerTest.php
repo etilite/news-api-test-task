@@ -14,9 +14,10 @@ class NewsControllerTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $response = $client->getResponse();
         $data = $response->getContent();
-        dump($data);
+
         $this->assertStringContainsString("Новость 7", $data);
-        //$this->assertStringContainsString("Новость 3", $data);
-        $this->assertStringContainsString("#политика", $data);
+        $this->assertStringContainsString("Новость 3", $data);
+        $this->assertStringContainsString("политика", $data);
+        $this->assertStringContainsString("totalElements", $data);
     }
 }

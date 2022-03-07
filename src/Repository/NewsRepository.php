@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\News;
+use App\Model\FilterParamsModel;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
@@ -23,25 +24,24 @@ class NewsRepository extends ServiceEntityRepository
         parent::__construct($registry, News::class);
     }
 
-    public function findByYearMonthAndTags(int $page = 1, string $year = '', string $month = '', array $tags = [])
+    public function findByYearMonthAndTags(FilterParamsModel $filterParamsModel)
     {
         $qb = $this->createQueryBuilder('n')
             ->leftJoin('n.tags', 'tag')
             ->addSelect('tag')
             ->orderBy('n.publishedAt', 'DESC')
         ;
-        if ($year && $month) {
-            $qb->andWhere('SUBSTRING(n.publishedAt, 1, 4) = :year')
-                ->andWhere('SUBSTRING(n.publishedAt, 6, 2) = :month')
-                ->setParameter('year', $year)
-                ->setParameter('month', $month)
+        if ($dateYearMonth = $filterParamsModel->getDateYearMonth()) {
+            $qb->andWhere('SUBSTRING(n.publishedAt, 1, 7) = :yearMonth')
+                ->setParameter('yearMonth', $dateYearMonth->format('Y-m'))
             ;
         }
+        $tags = $filterParamsModel->getTags();
         if (!empty($tags)) {
             $this->filterByTags($qb, $tags);
         }
 
-        return $this->paginate($qb, $page);
+        return $this->paginate($qb, $filterParamsModel->getPage());
     }
 
     public function findHavingTags(array $tags): ?array
